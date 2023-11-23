@@ -9,40 +9,55 @@ import sys
 #...
 #------
 
-dem, U, C, adj = []
-residual = []
+class Graph:
+    n = 0
+    dem = []
+    U = []
+    C = []
+    adj = []
+    residual = []
 
-def fileInput(fileName):
+
+def fileInput(fileName, g):
     file = open(fileName)
 
-    n = 0
-
+    g.n = 0
 
     for line in file:
         if (len(line) == 0): return
-
         data = [int(st) for st in line.split()]
 
         if (len(data) == 1):
             #FIRST LINE
-            n = data[0]
-            dem = [0 for i in range(n)]
-            adj = [[] for i in range(n)]
-            U = C = residual = [[0 for i in range(n)] for j in range(n)]
+            g.n = data[0] + 2 #for super nodes
+            g.dem = [0 for i in range(g.n)]
+            g.adj = [[] for i in range(g.n)]
+            g.U = g.C = g.residual = [[0 for i in range(g.n)] for j in range(g.n)]
         elif (len(data) == 2):
             #Node and demand
-            dem[data[0]] = data[1]
+            g.dem[data[0]] = data[1]
         else:
             #Edge
             i = data[0]; j = data[1]; c = data[2]; u = data[3]
-            U[i][j] = u; C[i][j] = c
-            adj[i].append(j)
-
+            g.U[i][j] = u; g.C[i][j] = c
+            g.adj[i].append(j)
+            g.adj[j].append(i)
     
+def AddSuperNodes(g: Graph):
+    g.n += 2
+
+
+def MinCostFlow(g: Graph):
+    g1 = g
+
+    AddSuperNodes(g1)
 
 def main():
-    fileInput(sys.argv[1])
+    g = Graph()
+    fileInput(sys.argv[1], g)
 
+    print(MinCostFlow(g))
+    
 
 if __name__ == "__main__":
     main()
