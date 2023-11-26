@@ -231,12 +231,13 @@ def GraphPlot(g: Graph):
 def main():
     g = Graph()
     fileInput(sys.argv[1], g)
+    print("Busack & Gowen SSP:")
 
     bf.set_start_time()    
     res = MinCostFlow(g)
     bf.get_elapsed_time()
 
-    print(res)
+    print("Result: ", res)
     GraphPlot(g)
     
 

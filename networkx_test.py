@@ -37,7 +37,7 @@ def main():
     fileInput(sys.argv[1], G)
 
     # print(nx.get_node_attributes(G, "demand"))
-
+    print("Networkx solver:")
     print("Network simplex:")
     bf.set_start_time()
     flowCost, flowDict = nx.network_simplex(G, weight="cost", capacity="capacity")
@@ -48,7 +48,7 @@ def main():
     flowCost, flowDict = nx.capacity_scaling(G, weight="cost", capacity="capacity")
     bf.get_elapsed_time()
 
-    print(flowCost)
+    print("Result: ", flowCost)
     # print(flowDict)
 
     
