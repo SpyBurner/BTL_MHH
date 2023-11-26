@@ -1,6 +1,13 @@
 import sys
 import heapq
-#input.txt format:
+
+import matplotlib.pyplot as plt
+import networkx as nx
+
+import benchmarkFunctions as bf
+
+#input .txt format:
+#numOfNodes
 #node demand
 #node demand
 #...
@@ -106,20 +113,16 @@ def ShortestPath(g: Graph):
     #python heap sorts by first of tuple
     heapq.heappush(queue, (0,0))
 
-    while queue:
-        u, d = heapq.heappop(queue)
+    while len(queue):
+        d, u = heapq.heappop(queue)
+        if visited[u]: continue
         visited[u] = True
-        print(u)
         #Found path to  sink
         if (u == g.numOfNodes-1): break
-
-        print("Adj to: ")
         for v in range(g.numOfNodes):
             #      edge exists              flow can increase
             if (u, v) in g.capacity and g.capacity[(u, v)] - g.flow[(u, v)] > 0 and not visited[v]:
-                print(v)
                 reduced_cost = g.cost[(u, v)] + g.demand[v] - g.demand[u]
-                print("Distance cmp: ", distance[v], " and ", distance[u] + reduced_cost)
                 if (distance[v] > distance[u] + reduced_cost):
                     distance[v] = distance[u] + reduced_cost
                     predecessor[v] = u
@@ -137,6 +140,7 @@ def BuildResidualGraph(g: Graph):
                 rg.capacity[(i, j)] = g.capacity[(i, j)]
                 rg.cost[(i, j)] = g.cost[(i, j)]
                 rg.demand[i] = g.demand[i]
+                rg.demand[j] = g.demand[j]
 
                 rg.flow[(i, j)] = g.flow[(i, j)]
                 if g.flow[(i, j)] > 0:
@@ -146,31 +150,94 @@ def BuildResidualGraph(g: Graph):
                     rg.cost[(j, i)] = -g.cost[(i, j)]
     return rg
 
+def AugmentFlow(g: Graph, predecessor):
+    #The amount of flow unit to incr along path
+    residual_capacity = float("inf")
+    
+    v = g.numOfNodes - 1
+    #going backward on the path to find min residual_capacity
+    while v != 0 and predecessor[v] != None:
+        u = predecessor[v]
+        residual_capacity = min(residual_capacity, g.capacity[(u, v)] - g.flow[(u, v)])
+        v = u
+    
+    v = g.numOfNodes - 1
+    #going backward again to incr
+    while v != 0 and predecessor[v] != None:
+        u = predecessor[v]
+        g.flow[(u, v)] += residual_capacity
+
+        if (v == g.numOfNodes - 1): g.demand[v] -= residual_capacity
+
+        v = u
+    g.demand[0] += residual_capacity
+
+def CalculateCost(g: Graph):
+    totalCost = 0
+
+    for e in g.flow:
+        totalCost += g.flow[e] * g.cost[e]
+    return totalCost
+
 def MinCostFlow(g: Graph):
     AddSuperNodes(g)
-
-    cnt = 0
-
     while True:
         rg  = BuildResidualGraph(g)
+        distance, predecessor = ShortestPath(rg)        
+        AugmentFlow(g, predecessor)
+        if (distance[g.numOfNodes-1] == float("inf")): break
+    return CalculateCost(g)
 
-        print(rg.cost)
-        print(rg.capacity)
-        print(rg.flow)
+def GraphPlot(g: Graph):
+    G = nx.DiGraph()
+    pos = {}
 
-        distance, predecessor = ShortestPath(rg)
-        print(distance)
-        print(predecessor)
+    visited = {}
+    queue = []
+    #node, level
+    queue.append((0, 1))
+
+    level = {}
+
+    while (queue):
+        u, l = queue.pop()
+        if (u in visited): continue
+        visited[u] = True
         
-        cnt += 1
-        if cnt == 1: break
+        if (not l in level): level[l] = 1
+        else: level[l] += 1
+        pos[u] = (l + 10, level[l]/5)
 
+        for v in range(g.numOfNodes):
+            if (u, v) in g.capacity:
+                queue.append((v, l + 1))
+                G.add_edge(u, v, capacity=g.capacity[(u, v)], flow=g.flow[(u, v)], cost=g.cost[(u, v)])
+    nx.draw_networkx(G, pos=pos, node_size = 500)
+
+    label1 = g.flow
+    label2 = g.capacity
+    label3 = g.cost
+
+    labelFinal = {}
+    for e in label1:
+        labelFinal[e] = (label3[e], (label1[e], label2[e]))
+
+    nx.draw_networkx_edge_labels(G, pos=pos, edge_labels = labelFinal)
+
+    plot1 = plt.subplot()
+    plt.axis("off")
+    plt.show()
 
 def main():
     g = Graph()
     fileInput(sys.argv[1], g)
 
-    print(MinCostFlow(g))
+    bf.set_start_time()    
+    res = MinCostFlow(g)
+    bf.get_elapsed_time()
+
+    print(res)
+    GraphPlot(g)
     
 
 if __name__ == "__main__":
