@@ -181,6 +181,7 @@ def CalculateCost(g: Graph):
 
 def MinCostFlow(g: Graph):
     AddSuperNodes(g)
+    GraphPlot(g)
     while True:
         rg  = BuildResidualGraph(g)
         distance, predecessor = ShortestPath(rg)        
@@ -188,7 +189,9 @@ def MinCostFlow(g: Graph):
         if (distance[g.numOfNodes-1] == float("inf")): break
     return CalculateCost(g)
 
+#Only use for flow with source = 0
 def GraphPlot(g: Graph):
+    return
     G = nx.DiGraph()
     pos = {}
 
@@ -231,15 +234,14 @@ def GraphPlot(g: Graph):
 def main():
     g = Graph()
     fileInput(sys.argv[1], g)
-    print("Busack & Gowen SSP:")
+    print("Algorithm 1")
 
-    bf.set_start_time()    
+    bf.set_start_time()
     res = MinCostFlow(g)
     bf.get_elapsed_time()
 
     print("Result: ", res)
     GraphPlot(g)
-    
 
 if __name__ == "__main__":
     main()

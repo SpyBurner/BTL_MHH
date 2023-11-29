@@ -3,7 +3,7 @@ from decimal import Decimal
 import time
 ###TIME
 # Define a global variable to store the starting time
-decimal.getcontext().prec = 60
+decimal.getcontext().prec = 20
 start_time = Decimal(0.0)
 # Define a function to set the starting time
 def set_start_time():
