@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 import benchmarkFunctions as bf
-
+import random
+import math
+#node indexes start at 1
 #input .txt format:
 #numOfNodes
 #node demand
@@ -93,42 +95,6 @@ def AddSuperNodes(g: Graph):
     #to add 2 new nodes
     g.numOfNodes+= 2
 
-def ShortestPath(g: Graph):
-    #LABEL-CORRECTING / Dijkstra
-    distance = {} #Distance from source to node i
-    predecessor = {} #Trace/previous node of i
-    visited = {}
-
-    #Init
-    for i in range(g.numOfNodes):
-        distance[i] = float("inf")
-        predecessor[i] = None
-        visited[i] = False
-
-    #starting distance of source
-    distance[0] = 0
-    #priority queue
-    queue = []
-    #tuple: (distance, node)
-    #python heap sorts by first of tuple
-    heapq.heappush(queue, (0,0))
-
-    while len(queue):
-        d, u = heapq.heappop(queue)
-        if visited[u]: continue
-        visited[u] = True
-        #Found path to  sink
-        if (u == g.numOfNodes-1): break
-        for v in range(g.numOfNodes):
-            #      edge exists              flow can increase
-            if (u, v) in g.capacity and g.capacity[(u, v)] - g.flow[(u, v)] > 0 and not visited[v]:
-                reduced_cost = g.cost[(u, v)] + g.demand[v] - g.demand[u]
-                if (distance[v] > distance[u] + reduced_cost):
-                    distance[v] = distance[u] + reduced_cost
-                    predecessor[v] = u
-                    heapq.heappush(queue, (distance[v], v))
-    return distance, predecessor
-
 def BuildResidualGraph(g: Graph):
     rg = Graph()
 
@@ -139,6 +105,7 @@ def BuildResidualGraph(g: Graph):
             if (i, j) in g.capacity:
                 rg.capacity[(i, j)] = g.capacity[(i, j)]
                 rg.cost[(i, j)] = g.cost[(i, j)]
+                
                 rg.demand[i] = g.demand[i]
                 rg.demand[j] = g.demand[j]
 
@@ -148,10 +115,80 @@ def BuildResidualGraph(g: Graph):
                     rg.capacity[(j, i)] = g.flow[(i, j)]
                     rg.flow[(j, i)] = g.flow[(i, j)]
                     rg.cost[(j, i)] = -g.cost[(i, j)]
+
     return rg
 
+def CalculatePotentials(g: Graph):
+    for i in range(g.numOfNodes):
+        g.demand[i] = float('inf')
+    
+    #Use Ford-Bellman, potentials are treated as the distance to the source of a node
+    #Initial potential of source
+    g.demand[0] = 0
+
+    #Flag to stop the algo early
+    changed = False
+    for k in range(g.numOfNodes-1):
+        for i in range(g.numOfNodes):
+            for j in range(g.numOfNodes):
+                #          edge exists        distance from i to j can be lowered
+                if (i, j) in g.cost and g.demand[j] > g.demand[i] + g.cost[(i, j)]:
+                    g.demand[j] = g.demand[i] + g.cost[(i, j)]
+                    changed = True
+        if not changed: break
+        changed = False
+
+    #Negative cycle check
+    changed = False
+    for i in range(g.numOfNodes):
+            for j in range(g.numOfNodes):
+                if ((i, j) in g.cost and g.demand[j] > g.demand[i] + g.cost[(i, j)]):
+                    g.demand[j] = g.demand[i] + g.cost[(i, j)]
+                    changed = True
+    
+    #This source code does not solve for networks with negative cost cycles
+    if changed: 
+        print("Negative cycle detected!")
+        exit()
+
+def ShortestPath(rg: Graph):
+    #use Dijkstra for performance
+    distance = {} #Distance from source to node i
+    predecessor = {} #Trace/previous node of i
+    visited = {}
+
+    #Init
+    for i in range(rg.numOfNodes):
+        distance[i] = float("inf")
+        predecessor[i] = None
+        visited[i] = False
+
+    #starting distance of source
+    distance[0] = 0
+    #priority queue
+    queue = []
+    #tuple: (distance, node)
+    #python heap cmp by first of tuple
+    heapq.heappush(queue, (0,0))
+
+    while len(queue):
+        d, u = heapq.heappop(queue)
+        if visited[u]: continue
+        visited[u] = True
+        #Found path to  sink
+        if (u == rg.numOfNodes-1): break
+        for v in range(rg.numOfNodes):
+            #      edge exists              flow can increase
+            if (u, v) in rg.capacity and rg.capacity[(u, v)] - rg.flow[(u, v)] > 0 and not visited[v]:
+                reduced_cost = rg.cost[(u, v)] - rg.demand[v] + rg.demand[u]
+                if (distance[v] > distance[u] + reduced_cost):
+                    distance[v] = distance[u] + reduced_cost
+                    predecessor[v] = u
+                    heapq.heappush(queue, (distance[v], v))
+    return distance, predecessor
+
 def AugmentFlow(g: Graph, predecessor):
-    #The amount of flow unit to incr along path
+    #The amount of flow unit to increase along path
     residual_capacity = float("inf")
     
     v = g.numOfNodes - 1
@@ -162,15 +199,15 @@ def AugmentFlow(g: Graph, predecessor):
         v = u
     
     v = g.numOfNodes - 1
-    #going backward again to incr
+    #going backward again to increase
     while v != 0 and predecessor[v] != None:
         u = predecessor[v]
         g.flow[(u, v)] += residual_capacity
-
-        if (v == g.numOfNodes - 1): g.demand[v] -= residual_capacity
+        
+        #new potentials are the length of the path found
+        g.demand[v] = g.demand[g.numOfNodes - 1]
 
         v = u
-    g.demand[0] += residual_capacity
 
 def CalculateCost(g: Graph):
     totalCost = 0
@@ -181,17 +218,17 @@ def CalculateCost(g: Graph):
 
 def MinCostFlow(g: Graph):
     AddSuperNodes(g)
-    GraphPlot(g)
+    CalculatePotentials(g)
     while True:
         rg  = BuildResidualGraph(g)
-        distance, predecessor = ShortestPath(rg)        
-        AugmentFlow(g, predecessor)
+        distance, predecessor = ShortestPath(rg)
+        #Fails to find a path
         if (distance[g.numOfNodes-1] == float("inf")): break
+        AugmentFlow(g, predecessor)
     return CalculateCost(g)
 
 #Only use for flow with source = 0
 def GraphPlot(g: Graph):
-    return
     G = nx.DiGraph()
     pos = {}
 
@@ -207,15 +244,24 @@ def GraphPlot(g: Graph):
         if (u in visited): continue
         visited[u] = True
         
-        if (not l in level): level[l] = 1
-        else: level[l] += 1
-        pos[u] = (l + 10, level[l]/5)
+        level[u] = l
+        # pos[u] = (u, 5*math.cos(random.random()*math.pi))
+        pos[u] = (level[u], u)
 
         for v in range(g.numOfNodes):
             if (u, v) in g.capacity:
                 queue.append((v, l + 1))
                 G.add_edge(u, v, capacity=g.capacity[(u, v)], flow=g.flow[(u, v)], cost=g.cost[(u, v)])
-    nx.draw_networkx(G, pos=pos, node_size = 500)
+    alt = -1
+    for i in range(g.numOfNodes):
+        for j in range(i + 1, g.numOfNodes):
+            if pos[i][0] == pos[j][0]:
+                while abs(pos[i][1] - pos[j][1]) < 3:
+                    pos[j] = (pos[j][0], pos[j][1] + 1)
+                pos[j] = (pos[j][0] - 0.1 * alt, pos[j][1])
+                alt *= -1
+    nx.draw_networkx(G, pos=pos, node_size = 300)
+
 
     label1 = g.flow
     label2 = g.capacity
@@ -225,7 +271,7 @@ def GraphPlot(g: Graph):
     for e in label1:
         labelFinal[e] = (label3[e], (label1[e], label2[e]))
 
-    nx.draw_networkx_edge_labels(G, pos=pos, edge_labels = labelFinal)
+    nx.draw_networkx_edge_labels(G, pos=pos, edge_labels = labelFinal, label_pos=0.6)
 
     plot1 = plt.subplot()
     plt.axis("off")

@@ -32,15 +32,15 @@ def main():
 
     print("Network simplex:")
     bf.set_start_time()
-    flowCost, flowDict = nx.network_simplex(G, weight="cost", capacity="capacity")
+    flowCost, dummy = nx.network_simplex(G, weight="cost", capacity="capacity")
     bf.get_elapsed_time()
-
     print("Capacity scaling:")
     bf.set_start_time()
-    flowCost, flowDict = nx.capacity_scaling(G, weight="cost", capacity="capacity")
+    flowDict = nx.min_cost_flow(G, weight="cost", capacity="capacity")
     bf.get_elapsed_time()
-
     print("Result: ", flowCost)
+
+    print("Flow path: ", flowDict)
     
 if __name__ == "__main__":
     main()
