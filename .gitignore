@@ -1,3 +1,6 @@
-Lib/*
-Scripts/*
-.vscode/*
+Problem2/Lib
+Problem2/Scripts
+Problem2/.vscode
+Problem2/share
+Problem2/__pycache__
+Problem2/pyvenv.cfg
