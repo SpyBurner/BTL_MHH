@@ -125,7 +125,6 @@ def CalculatePotentials(g: Graph):
     #Use Ford-Bellman, potentials are treated as the distance to the source of a node
     #Initial potential of source
     g.demand[0] = 0
-
     #Flag to stop the algo early
     changed = False
     for k in range(g.numOfNodes-1):
@@ -167,27 +166,34 @@ def ShortestPath(rg: Graph):
     distance[0] = 0
     #priority queue
     queue = []
-    #tuple: (distance, node)
+    #tuple: (distance, from, to)
     #python heap cmp by first of tuple
-    heapq.heappush(queue, (0,0))
+    heapq.heappush(queue, (0,0,0))
 
     while len(queue):
-        d, u = heapq.heappop(queue)
-        if visited[u]: continue
-        visited[u] = True
-        #Found path to  sink
-        if (u == rg.numOfNodes-1): break
+        d, u, v = heapq.heappop(queue)
+        if visited[v]: continue
+        
+        visited[v] = True
+        predecessor[v] = u
+        if (u, v) in rg.cost:
+            print("Reduced cost: ", u, "->", v," = ", rg.cost[(u, v)], " - ", rg.demand[v], " + ", rg.demand[u], "\n = ", reduced_cost)
+
+        #Found greedy path to sink
+        if (visited[rg.numOfNodes-1]): break
+        
+        #Update distances of nodes adjacent to v, using u as v
+        u = v
         for v in range(rg.numOfNodes):
             #      edge exists              flow can increase
             if (u, v) in rg.capacity and rg.capacity[(u, v)] - rg.flow[(u, v)] > 0 and not visited[v]:
                 reduced_cost = rg.cost[(u, v)] - rg.demand[v] + rg.demand[u]
                 if (distance[v] > distance[u] + reduced_cost):
                     distance[v] = distance[u] + reduced_cost
-                    predecessor[v] = u
-                    heapq.heappush(queue, (distance[v], v))
+                    heapq.heappush(queue, (distance[v], u, v))
     return distance, predecessor
 
-def AugmentFlow(g: Graph, predecessor):
+def AugmentFlow(g: Graph, distance, predecessor):
     #The amount of flow unit to increase along path
     residual_capacity = float("inf")
     
@@ -199,13 +205,14 @@ def AugmentFlow(g: Graph, predecessor):
         v = u
     
     v = g.numOfNodes - 1
+    g.demand[v] = distance[v]
     #going backward again to increase
     while v != 0 and predecessor[v] != None:
         u = predecessor[v]
         g.flow[(u, v)] += residual_capacity
         
         #new potentials are the length of the path found
-        g.demand[v] = g.demand[g.numOfNodes - 1]
+        g.demand[u] = g.demand[v] - g.cost[(u, v)]
 
         v = u
 
@@ -219,12 +226,14 @@ def CalculateCost(g: Graph):
 def MinCostFlow(g: Graph):
     AddSuperNodes(g)
     CalculatePotentials(g)
+    print(g.demand)
     while True:
         rg  = BuildResidualGraph(g)
         distance, predecessor = ShortestPath(rg)
         #Fails to find a path
         if (distance[g.numOfNodes-1] == float("inf")): break
-        AugmentFlow(g, predecessor)
+        AugmentFlow(g, distance, predecessor)
+        print(g.demand)
     return CalculateCost(g)
 
 #Only use for flow with source = 0

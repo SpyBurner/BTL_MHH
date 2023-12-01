@@ -43,6 +43,8 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 6 8 8 10
 7 8 9 15
 
+#HAVE BOTH EDGES ON A PAIR OF VERTICES
+#Doesnt solve?:p
 7
 1 -8
 3 -1
@@ -96,7 +98,7 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 5 2
 1 2 1 7
 1 3 5 7
-2 3 2 2
+2 3 -2 2
 2 4 8 3
 3 4 -3 3
 3 5 4 2
