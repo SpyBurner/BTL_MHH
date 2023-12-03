@@ -45,7 +45,6 @@ class Graph:
             u, v = edge
             print(f"Edge ({u}, {v}): Flow = {self.flow[edge]}")
 
-
 def fileInput(fileName, g : Graph):
     file = open(fileName, "r")
 
@@ -150,14 +149,14 @@ def CalculatePotentials(g: Graph):
         print("Negative cycle detected!")
         exit()
 
-def ShortestPath(rg: Graph):
+def ShortestPath(g: Graph):
     #use Dijkstra for performance
     distance = {} #Distance from source to node i
     predecessor = {} #Trace/previous node of i
     visited = {}
 
     #Init
-    for i in range(rg.numOfNodes):
+    for i in range(g.numOfNodes):
         distance[i] = float("inf")
         predecessor[i] = None
         visited[i] = False
@@ -176,22 +175,28 @@ def ShortestPath(rg: Graph):
         
         visited[v] = True
         predecessor[v] = u
-        if (u, v) in rg.cost:
-            print("Reduced cost: ", u, "->", v," = ", rg.cost[(u, v)], " - ", rg.demand[v], " + ", rg.demand[u], "\n = ", reduced_cost)
 
         #Found greedy path to sink
-        if (visited[rg.numOfNodes-1]): break
+        if (visited[g.numOfNodes-1]): break
         
         #Update distances of nodes adjacent to v, using u as v
         u = v
-        for v in range(rg.numOfNodes):
+        for v in range(g.numOfNodes):
             #      edge exists              flow can increase
-            if (u, v) in rg.capacity and rg.capacity[(u, v)] - rg.flow[(u, v)] > 0 and not visited[v]:
-                reduced_cost = rg.cost[(u, v)] - rg.demand[v] + rg.demand[u]
-                if (distance[v] > distance[u] + reduced_cost):
-                    distance[v] = distance[u] + reduced_cost
+            if (u, v) in g.capacity and g.capacity[(u, v)] - g.flow[(u, v)] > 0 and not visited[v]:
+                if (distance[v] > distance[u] + g.cost[(u, v)]):
+                    distance[v] = distance[u] + g.cost[(u, v)]
                     heapq.heappush(queue, (distance[v], u, v))
+    
+    #Update potential values
+    for i in range(g.numOfNodes):
+        g.demand[i] = distance[i]
+    
     return distance, predecessor
+
+def ReduceCost(g: Graph):
+    for u, v in g.cost:
+        g.cost[(u, v)] = g.cost[(u, v)] - g.demand[v] + g.demand[u]
 
 def AugmentFlow(g: Graph, distance, predecessor):
     #The amount of flow unit to increase along path
@@ -211,8 +216,10 @@ def AugmentFlow(g: Graph, distance, predecessor):
         u = predecessor[v]
         g.flow[(u, v)] += residual_capacity
         
-        #new potentials are the length of the path found
-        g.demand[u] = g.demand[v] - g.cost[(u, v)]
+        if g.flow[(u, v)] > 0:
+            g.capacity[(v, u)] = g.flow[(u, v)]
+            g.flow[(v, u)] = g.flow[(u, v)]
+            g.cost[(v, u)] = -g.cost[(u, v)]
 
         v = u
 
@@ -226,14 +233,17 @@ def CalculateCost(g: Graph):
 def MinCostFlow(g: Graph):
     AddSuperNodes(g)
     CalculatePotentials(g)
-    print(g.demand)
+    rg  = BuildResidualGraph(g)
+    ReduceCost(rg)
     while True:
-        rg  = BuildResidualGraph(g)
         distance, predecessor = ShortestPath(rg)
         #Fails to find a path
         if (distance[g.numOfNodes-1] == float("inf")): break
-        AugmentFlow(g, distance, predecessor)
-        print(g.demand)
+        ReduceCost(rg)
+        AugmentFlow(rg, distance, predecessor)
+        # GraphPlot(rg)
+    for e in g.flow:
+        g.flow[e] = rg.flow[e]
     return CalculateCost(g)
 
 #Only use for flow with source = 0
@@ -286,6 +296,34 @@ def GraphPlot(g: Graph):
     plt.axis("off")
     plt.show()
 
+def Verify(g: Graph) -> bool:
+    sumFlow = {}
+    sumCap = {}
+    source = 0
+    sink = g.numOfNodes-1
+    
+    sumFlow[source] = 0
+    sumFlow[sink] = 0
+    sumCap[source] = 0
+    sumCap[sink] = 0    
+    for (u, v) in g.flow:
+        if u == source: 
+            sumFlow[u] += g.flow[(u, v)]
+            sumCap[u] += g.capacity[(u, v)]
+        if v == sink: 
+            sumFlow[v] += g.flow[(u, v)]
+            sumCap[v] += g.capacity[(u, v)]
+    
+    if (sumCap[source] != sumCap[sink]): 
+        print("Initial demand != supply")
+        return False
+    
+    if (sumCap[source] != sumFlow[source]):
+        print("All flow not feasible")
+        return False
+
+    return True
+
 def main():
     g = Graph()
     fileInput(sys.argv[1], g)
@@ -295,6 +333,8 @@ def main():
     res = MinCostFlow(g)
     bf.get_elapsed_time()
 
+    if not Verify(g): return
+    
     print("Result: ", res)
     GraphPlot(g)
 
