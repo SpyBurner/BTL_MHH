@@ -93,7 +93,6 @@ def AddSuperNodes(g: Graph):
     
     #to add 2 new nodes
     g.numOfNodes+= 2
-
 def BuildResidualGraph(g: Graph):
     rg = Graph()
 
@@ -210,8 +209,8 @@ def AugmentFlow(g: Graph, distance, predecessor):
         v = u
     
     v = g.numOfNodes - 1
-    g.demand[v] = distance[v]
-    #going backward again to increase
+    
+    #going backward again to increase flow
     while v != 0 and predecessor[v] != None:
         u = predecessor[v]
         g.flow[(u, v)] += residual_capacity
@@ -222,6 +221,10 @@ def AugmentFlow(g: Graph, distance, predecessor):
             g.cost[(v, u)] = -g.cost[(u, v)]
 
         v = u
+
+    #new potentials are the length of the path found
+    for i in range(g.numOfNodes):
+        g.demand[i] = distance[i]
 
 def CalculateCost(g: Graph):
     totalCost = 0
