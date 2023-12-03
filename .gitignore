@@ -1,3 +1,5 @@
-Lib/*
-Scripts/*
-.vscode/*
+Problem2/Lib
+Problem2/Scripts
+Problem2/share
+Problem2/__pycache__
+**/.vscode
