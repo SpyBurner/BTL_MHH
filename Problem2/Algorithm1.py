@@ -55,12 +55,11 @@ def fileInput(fileName, g : Graph):
         if (len(data) == 1):
             #FIRST LINE
             g.numOfNodes = data[0]
-
-            for i in range(g.numOfNodes):
+            for i in range(g.numOfNodes+1):
                 g.demand[i] = 0
         elif (len(data) == 2):
             #Node and demand
-            g.demand[data[0]] = data[1]
+            g.demand[data[0]] = -data[1]
         else:
             #Edge
             i, j, c, u = data
@@ -99,7 +98,7 @@ def BuildResidualGraph(g: Graph):
     rg.numOfNodes = g.numOfNodes
 
     for i in range(g.numOfNodes):
-        for j in range(g.numOfNodes):
+        for j in range(i + 1, g.numOfNodes):
             if (i, j) in g.capacity:
                 rg.capacity[(i, j)] = g.capacity[(i, j)]
                 rg.cost[(i, j)] = g.cost[(i, j)]
@@ -142,7 +141,6 @@ def CalculatePotentials(g: Graph):
                 if ((i, j) in g.cost and g.demand[j] > g.demand[i] + g.cost[(i, j)]):
                     g.demand[j] = g.demand[i] + g.cost[(i, j)]
                     changed = True
-    
     #This source code does not solve for networks with negative cost cycles
     if changed: 
         print("Negative cycle detected!")
@@ -174,10 +172,7 @@ def ShortestPath(g: Graph):
         
         visited[v] = True
         predecessor[v] = u
-
-        #Found greedy path to sink
-        if (visited[g.numOfNodes-1]): break
-        
+      
         #Update distances of nodes adjacent to v, using u as v
         u = v
         for v in range(g.numOfNodes):
@@ -235,8 +230,8 @@ def CalculateCost(g: Graph):
 
 def MinCostFlow(g: Graph):
     AddSuperNodes(g)
-    CalculatePotentials(g)
     rg  = BuildResidualGraph(g)
+    CalculatePotentials(rg)
     ReduceCost(rg)
     while True:
         distance, predecessor = ShortestPath(rg)
@@ -244,7 +239,7 @@ def MinCostFlow(g: Graph):
         if (distance[g.numOfNodes-1] == float("inf")): break
         ReduceCost(rg)
         AugmentFlow(rg, distance, predecessor)
-        # GraphPlot(rg)
+        
     for e in g.flow:
         g.flow[e] = rg.flow[e]
     return CalculateCost(g)
@@ -306,7 +301,7 @@ def Verify(g: Graph) -> bool:
     sink = g.numOfNodes-1
     
     sumFlow[source] = 0
-    sumFlow[sink] = 0
+    sumFlow[sink] = 0   
     sumCap[source] = 0
     sumCap[sink] = 0    
     for (u, v) in g.flow:
@@ -316,7 +311,7 @@ def Verify(g: Graph) -> bool:
         if v == sink: 
             sumFlow[v] += g.flow[(u, v)]
             sumCap[v] += g.capacity[(u, v)]
-    
+            
     if (sumCap[source] != sumCap[sink]): 
         print("Initial demand != supply")
         return False

@@ -18,7 +18,7 @@ def fileInput(fileName, G: nx.DiGraph):
         elif (len(data) == 2):
             #Node and demand
             u, d = data
-            demand[u] = d
+            demand[u] = -d
         else:
             #Edge
             i, j, c, u = data

@@ -1,23 +1,34 @@
 #Some debug lines
 print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " + ", g.demand[u], "\n = ", reduced_cost)
 
+#node indexes start at 1
+#input .txt format:
+#numOfNodes
+#nodeid  demand
+#nodeid  demand
+#...
+#from to weight capacity
+#from to weight capacity
+#...
+#------
+
 
 #Testcases
 
 4
-1 -5
-4 5
+1 5
+4 -5
 1 2 3 1
 1 3 6 15
 2 4 1 9
 3 4 2 15
 
 6
-1 -5
-2 -2
-6 1
-5 4
-4 2
+1 5
+2 2
+6 -1
+5 -4
+4 -2
 1 2 1 3
 1 3 4 3
 2 3 2 7
@@ -27,11 +38,11 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 4 5 1 3
 
 8
-1 -10
-2 -20
-4 5
-7 15
-8 10
+1 10
+2 20
+4 -5
+7 -15
+8 -10
 1 4 2 15
 2 1 1 10
 2 3 0 10
@@ -46,12 +57,12 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 #HAVE BOTH EDGES ON A PAIR OF VERTICES
 #Doesnt solve?:p
 7
-1 -8
-3 -1
-4 -1
-5 2
-6 1
-7 7
+1 8
+3 1
+4 1
+5 -2
+6 -1
+7 -7
 1 2 4 7
 1 3 2 5
 2 5 3 5
@@ -68,12 +79,12 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 6 5 2 10
 
 6
-1 -6
-2 -3
-3 -4
-4 2
-5 3
-6 8
+1 6
+2 3
+3 4
+4 -2
+5 -3
+6 -8
 1 2 1 3
 1 3 2 5
 1 4 1 3
@@ -84,8 +95,8 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 5 6 4 5
 
 4
-1 -10
-4 10
+1 10
+4 -10
 1 2 2 6
 1 3 3 8
 2 4 4 5
@@ -93,9 +104,9 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 3 4 2 4
 
 5
-1 -5
-4 3
-5 2
+1 5
+4 -3
+5 -2
 1 2 1 7
 1 3 5 7
 2 3 -2 2
@@ -104,11 +115,23 @@ print("Reduced cost: ", u, "->", v," = ", g.cost[(u, v)], " - ", g.demand[v], " 
 3 5 4 2
 
 5
-1 -10
-5 10
+1 10
+5 -10
 1 2 2 6
 1 3 3 4
 2 3 1 3
 2 5 4 5
 3 4 2 2
 4 5 1 7
+
+6
+1 3
+2 -2
+6 -1
+5 0
+1 2 2 3
+1 3 1 4
+2 4 2 1
+3 4 1 1
+3 5 1 1
+4 6 1 2
