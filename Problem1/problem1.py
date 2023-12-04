@@ -30,24 +30,22 @@ manufactureData = pd.read_excel(
 
 # ## Generate data for `demand` follows Bin(10, 0.5)
 # - Create probability set of values in range[0,10]
-values = list(range(11))
-probValues = []
-for v in values:
-    probValues.append(math.comb(10, v)*pow(0.5, v)*pow(0.5, 10-v))
+# values = list(range(11))
+# probValues = []
+# for v in values:
+#     probValues.append(math.comb(10, v)*pow(0.5, v)*pow(0.5, 10-v))
 # print(probValues)
 
 # - Random values for $d^1$ and $d^2$ where probability of each value follows `probValues`
 # d1 = random.choices(values, probValues, k=8)
-d1 = [7, 4, 3, 2, 4, 5, 1, 8]
 # print(d1)
 
 # d2 = random.choices(values, probValues, k=8)
-d2 = [5, 6, 7, 0, 5, 9, 8, 6]
 # print(d2)
 
 # - Add demand values to `productsData`
-productsData["demand 1"] = d1
-productsData["demand 2"] = d2
+# productsData["demand 1"] = d1
+# productsData["demand 2"] = d2
 # print(productsData)
 
 # ## Symbol Declaration
